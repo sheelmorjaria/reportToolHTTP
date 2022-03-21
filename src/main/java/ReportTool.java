@@ -8,39 +8,32 @@ import java.net.http.HttpResponse;
 import java.util.Scanner;
 
 public class ReportTool {
-    public static void main(String[] args) {
+    // Get the reports for a list of URLs
+    public static void main(String[] args) throws IOException, InterruptedException {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter the URLs");
-        for (Scanner it = scanner; it.hasNext(); ) {
-            String line = it.next();
-            try {
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(line))
-                        .build();
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                String url = response.uri().toString();
-                int status = response.statusCode();
-                int length = response.body().length();
-                urlReport urlReportInstance = new urlReport(url, status, length);
-
-                JSONWriter jsonWriter = new JSONWriter(System.out);
-                jsonWriter.object();
-                jsonWriter.key("url");
-                jsonWriter.value(urlReportInstance.getUrl());
-                jsonWriter.key("status");
-                jsonWriter.value(urlReportInstance.getStatus());
-                jsonWriter.key("length");
-                jsonWriter.value(urlReportInstance.getLength());
-                jsonWriter.endObject();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        while (scanner.hasNext()) {
+            String line = scanner.next();
+            urlReport report = getReport(line);
+            JSONWriter json = new JSONWriter(System.out);
+            json.object();
+            json.key("url").value(report.getUrl());
+            json.key("status").value(report.getStatus());
+            json.key("length").value(report.getLength());
+            json.endObject();
         }
+    }
+    // Get the report for a single URL
+    public static urlReport getReport(String line) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(line))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        String uri = response.uri().toString();
+        int status = response.statusCode();
+        int length = response.body().length();
+        return new urlReport(uri, status, length);
     }
 }
     class urlReport {
